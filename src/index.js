@@ -1,7 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
-import bookingRoutes from "./routes/booking";
-import paymentRoutes from "./routes/payment";
+import bookingRoutes from "./routes/booking.js";
+import paymentRoutes from "./routes/payment.js";
 
 
 const app = express();
