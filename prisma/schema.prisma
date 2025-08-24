@@ -1,41 +1,80 @@
-datasource db {
-provider = "postgresql"
-url = env("DATABASE_URL")
-}
-
-
 generator client {
-provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
+datasource db {
+    provider = "postgresql"
+    url = env("DATABASE_URL")
+}
+
+model Event {
+    id Int @id @default(autoincrement())
+    name String
+    description String?
+    location String?
+    startDate DateTime
+    endDate DateTime
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    days EventDay[]
+}
 
 model EventDay {
-id Int @id @default(autoincrement())
-date DateTime
-capacity Int
-bookings Booking[]
+    id Int @id @default(autoincrement())
+    eventId Int
+    date DateTime
+    pricePaise Int // store in paise to avoid floats
+    capacity Int
+    availableTickets Int // remaining inventory
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    event Event @relation(fields: [eventId], references: [id])
+    bookings Booking[]
+
+    @@index([eventId, date])
 }
 
 
 model Booking {
-id Int @id @default(autoincrement())
-name String
-email String
-mobile String
-tickets Int
-createdAt DateTime @default(now())
-eventDayId Int
-eventDay EventDay @relation(fields: [eventDayId], references: [id])
-payment Payment?
+    id Int @id @default(autoincrement())
+    eventDayId Int
+    buyerName String
+    buyerEmail String
+    buyerPhone String
+    tickets Int
+    totalPaise Int
+    status BookingStatus @default(PENDING)
+    createdAt DateTime @default(now())
+
+    eventDay EventDay @relation(fields: [eventDayId], references: [id])
+    payment Payment?
+
+    @@index([eventDayId])
 }
 
-
 model Payment {
-id Int @id @default(autoincrement())
-bookingId Int @unique
-status String
-provider String
-refId String
-createdAt DateTime @default(now())
-booking Booking @relation(fields: [bookingId], references: [id])
+    id Int @id @default(autoincrement())
+    bookingId Int @unique
+    provider String // "razorpay"
+    gatewayOrderId String @unique
+    gatewayPaymentId String? @unique
+    status PaymentStatus @default(PENDING)
+    amountPaise Int
+    raw Json?
+    createdAt DateTime @default(now())
+
+    booking Booking @relation(fields: [bookingId], references: [id])
+}
+
+enum BookingStatus {
+    PENDING
+    CONFIRMED
+    CANCELLED
+}
+
+enum PaymentStatus {
+    PENDING
+    SUCCESS
+    FAILED
 }
